@@ -1,19 +1,18 @@
 package br.com.alunra.Screenmtach.principal;
 
-import br.com.alunra.Screenmtach.model.DadosSeries;
-import br.com.alunra.Screenmtach.model.DadosTemporada;
-import br.com.alunra.Screenmtach.model.Episodio;
-import br.com.alunra.Screenmtach.model.Serie;
+import br.com.alunra.Screenmtach.model.*;
 import br.com.alunra.Screenmtach.repository.SerieRepository;
 import br.com.alunra.Screenmtach.service.ConsumoApi;
 import br.com.alunra.Screenmtach.service.ConverteDados;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class Principal {
 
+    private static final Logger log = LoggerFactory.getLogger(Principal.class);
     private Scanner leitura = new Scanner(System.in);
 
     private ConsumoApi consumo = new ConsumoApi();
@@ -43,6 +42,11 @@ public class Principal {
                     2 - Bsucar Episodios
                     3 - Listar Series buscas
                     4 - Buscar serie por titulo
+                    5 - Buscar serie por ator
+                    6 - Top 5 series
+                    7 - Buscar serie categoria
+                    8 - Filtrar Series
+                    9 - Buscar episodio por trecho
                     
                     0 - sair
                     """;
@@ -62,6 +66,21 @@ public class Principal {
                     break;
                 case 4:
                     buscarEpisodioPortitulo();
+                    break;
+                case 5:
+                    buscarSeriesPorAtor();
+                    break;
+                case 6:
+                    buscarTop5Series();
+                    break;
+                case 7:
+                    buscarSerieCategoria();
+                    break;
+                case 8:
+                    BuscarSerieFiltrada();
+                    break;
+                case 9:
+                    buscarEpisodioPorTrecho();
                     break;
                 case 0:
                     System.out.println("Saindo...");
@@ -135,5 +154,52 @@ public class Principal {
         } else {
             System.out.println("Serie nao encotrada. ");
         }
+    }
+
+    private void buscarSeriesPorAtor() {
+        System.out.println("Digite o nome do ator que deseja buscar: ");
+        var nomeAtor = leitura.nextLine();
+        System.out.println("Avaliaçoes apartir de que valor? ");
+        var avaliacao = leitura.nextDouble();
+        //Digite a avaliação no formato X.X
+        List<Serie> seriesEncontradas = serieRepository. findByAtoresContainingIgnoreCaseAndAvaliacaoGreaterThanEqual(nomeAtor, avaliacao);
+        System.out.println("Series em que " + nomeAtor + "trabalhou: ");
+        seriesEncontradas.forEach(s -> System.out.println(s.getTitulo() + "avaliação: " + s.getAvaliacao()));
+    }
+
+    private void buscarTop5Series() {
+        List<Serie> serietop = serieRepository.findTop5OByOrderByAvaliacaoDesc();
+    }
+
+    private void buscarSerieCategoria() {
+        System.out.println("deseja buscar series de que categiroa/genero? ");
+        var nomeGenero = leitura.nextLine();
+        Categoria categoria = Categoria.FromPortugues(nomeGenero);
+        List<Serie> seriesporCategoria = serieRepository.findBygenero(categoria);
+        System.out.println("Series da categoria "+ nomeGenero);
+        seriesporCategoria.forEach(System.out::println);
+    }
+
+    private void BuscarSerieFiltrada() {
+        System.out.println("Filtrar series ate quantas temporadas? ");
+        var totalTemporada = leitura.nextLine();
+        System.out.println("Com avaliaçoes apartir de que valor? ");
+        var avaliacao = leitura.nextDouble();
+        List<Serie> filtroSeries = serieRepository.seriesPorTemporadaEAvaliacao(Integer.parseInt(totalTemporada),avaliacao);
+        System.out.println("*** Series Filtradas ***");
+        filtroSeries.forEach(s -> System.out.println(s.getTitulo() + " -avaliacao: " + s.getAvaliacao()));
+    }
+
+    private void buscarEpisodioPorTrecho() {
+        System.out.println("Qual nome do episodio para busca? ");
+        var trechoEpisodio = leitura.nextLine();
+        List<Episodio> episodiosEncontrados = serieRepository.episodiosPorTrecho(trechoEpisodio);
+        episodiosEncontrados.forEach(e ->
+                System.out.printf("Serie : %s Temporada %s - Episodios %s - %s\n",
+                e.getSerie()
+                        .getTitulo(),
+                e.getTemporada(),
+                e.getNumeroEpisodio(),
+                e.getTitulo()));
     }
 }
